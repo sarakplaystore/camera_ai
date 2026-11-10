@@ -66,40 +66,7 @@ jobs:
             -dname "CN=Camera AI, OU=Apps, O=Sarak, L=Kampot, C=KH"
 
       - name: Build release APK
-        id: gradle
-        continue-on-error: true
-        run: |
-          set -o pipefail
-          ./gradlew :app:assembleRelease --stacktrace --no-daemon 2>&1 | tee build.log
-          exit ${PIPESTATUS[0]}
-
-      - name: Publish build log (for debugging)
-        if: always()
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        run: |
-          {
-            echo "Run: $GITHUB_SERVER_URL/$GH_REPO/actions/runs/$GITHUB_RUN_ID"
-            echo "Commit: $GITHUB_SHA"
-            echo '```'
-            grep -nE "^(e:|w: .*(error|Error))|FAILURE|What went wrong|> Task .* FAILED|error:|Caused by" build.log | head -200 || true
-            echo '```'
-            echo
-            echo '```'
-            grep -n -B2 -A12 "^e: \| error: " build.log | head -400 || true
-            echo '```'
-          } > issue-body.md
-          NUM=$(gh issue list --repo "$GH_REPO" --search "BUILD FAILURES in:title" --state open --json number -q '.[0].number' || true)
-          if [ -z "$NUM" ]; then
-            gh issue create --repo "$GH_REPO" --title "BUILD FAILURES" --body-file issue-body.md
-          else
-            gh issue comment "$NUM" --repo "$GH_REPO" --body-file issue-body.md
-          fi
-
-      - name: Fail if gradle failed
-        if: steps.gradle.outcome == 'failure'
-        run: exit 1
+        run: ./gradlew :app:assembleRelease --stacktrace --no-daemon
 
       - name: Rename artifact
         run: |
