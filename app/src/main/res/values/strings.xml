@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Camera AI</string>
+    <string name="settings">Settings</string>
+    <string name="gallery">Clips</string>
+
+    <string name="record">Record</string>
+    <string name="stop">Stop</string>
+    <string name="snapshot">Snapshot</string>
+    <string name="torch">Torch</string>
+    <string name="flip">Flip</string>
+
+    <string name="status_idle">Starting camera…</string>
+    <string name="permission_needed">Camera permission is required to watch for people.</string>
+    <string name="grant_permission">Grant camera access</string>
+
+    <string name="channel_service_name">Camera AI watcher</string>
+    <string name="channel_service_desc">Keeps the camera watching while the app is in the background.</string>
+    <string name="notif_watching">Watching • %1$d people</string>
+    <string name="notif_recording">Recording • %1$s</string>
+    <string name="notif_waiting">Waiting for people</string>
+</resources>

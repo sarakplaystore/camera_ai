@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory app:title="When to record">
+
+        <ListPreference
+            app:defaultValue="1"
+            app:entries="@array/trigger_entries"
+            app:entryValues="@array/trigger_values"
+            app:key="trigger_mode"
+            app:title="Start recording"
+            app:useSimpleSummaryProvider="false" />
+
+        <Preference
+            app:key="min_record_summary"
+            app:selectable="false"
+            app:title="Minimum clip length" />
+
+        <SeekBarPreference
+            app:key="min_record_hours"
+            app:max="3"
+            app:title="Minimum length — hours"
+            app:showSeekBarValue="true" />
+
+        <SeekBarPreference
+            app:key="min_record_minutes"
+            app:max="59"
+            app:title="Minimum length — minutes"
+            app:showSeekBarValue="true" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:key="extend_while_present"
+            app:summary="After the minimum is met, keep rolling while somebody is still there"
+            app:title="Keep rolling while people stay" />
+
+        <EditTextPreference
+            app:defaultValue="30"
+            app:key="stop_grace_seconds"
+            app:title="Stop delay after the last person leaves (seconds)" />
+
+        <SeekBarPreference
+            app:defaultValue="60"
+            app:key="max_record_minutes"
+            app:max="240"
+            app:title="Maximum clip length — minutes (0 = unlimited)"
+            app:showSeekBarValue="true" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="Detection">
+
+        <SeekBarPreference
+            app:defaultValue="45"
+            app:key="min_detection_confidence"
+            app:max="85"
+            app:title="Detection sensitivity (% confidence)"
+            app:showSeekBarValue="true" />
+
+        <SeekBarPreference
+            app:defaultValue="5"
+            app:key="max_people"
+            app:max="5"
+            app:title="People to track at once"
+            app:showSeekBarValue="true" />
+
+        <ListPreference
+            app:defaultValue="10"
+            app:entries="@array/fps_entries"
+            app:entryValues="@array/fps_values"
+            app:key="analysis_fps"
+            app:title="Analysis frame rate" />
+
+        <ListPreference
+            app:defaultValue="lite"
+            app:entries="@array/model_entries"
+            app:entryValues="@array/model_values"
+            app:key="model_variant"
+            app:title="Pose model" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:key="draw_skeleton"
+            app:title="Draw skeletons" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:key="draw_boxes"
+            app:title="Draw boxes" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="Recording">
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:key="with_audio"
+            app:summary="Record sound with the video (needs microphone permission)"
+            app:title="Record audio" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:key="auto_watch"
+            app:summary="Watch for people as soon as the camera opens"
+            app:title="Start watching automatically" />
+
+        <Preference
+            app:key="storage_info"
+            app:selectable="false"
+            app:title="Where clips go" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="About">
+        <Preference
+            app:key="about_version"
+            app:selectable="false"
+            app:title="Camera AI" />
+    </PreferenceCategory>
+
+</PreferenceScreen>
