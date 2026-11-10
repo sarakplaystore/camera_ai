@@ -40,6 +40,8 @@ class SettingsActivity : AppCompatActivity() {
  */
 class SettingsFragment : PreferenceFragmentCompat() {
 
+    private val view: android.view.View? get() = getView()
+
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.settings, rootKey)
         val ctx = requireContext()
@@ -79,8 +81,14 @@ class SettingsFragment : PreferenceFragmentCompat() {
             update(cfg) { it.copy(minRecordSeconds = safe) }
             minSummary?.summary = "Never stops before ${Format.durationLong(safe)}"
         }
-        minHours?.setOnPreferenceChangeListener { _, _ -> minHours.post { pushMinLength() }; true }
-        minMins?.setOnPreferenceChangeListener { _, _ -> minMins.post { pushMinLength() }; true }
+        minHours?.setOnPreferenceChangeListener { _, _ ->
+            view?.post { pushMinLength() }
+            true
+        }
+        minMins?.setOnPreferenceChangeListener { _, _ ->
+            view?.post { pushMinLength() }
+            true
+        }
         minSummary?.summary = "Never stops before ${Format.durationLong(cfg.minRecordSeconds)}"
 
         // ------------------------------------------------------------------ audio
@@ -138,12 +146,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         // -------------------------------------------------------------- hard cap
         val maxMinutes = findPreference<SeekBarPreference>("max_record_minutes")
-        maxMinutes?.apply {
-            min = 0
-            max = 240
-            value = cfg.maxRecordSeconds / 60
-            setOnPreferenceChangeListener { _, _ -> maxMinutes.post { pushMax() }; true }
-        }
         fun pushMax() {
             val minutes = maxMinutes?.value ?: 60
             update(cfg) { it.copy(maxRecordSeconds = minutes * 60) }
@@ -151,37 +153,44 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 if (minutes == 0) "No limit — rolls until you stop it"
                 else "Never longer than ${Format.durationLong(minutes * 60)}"
         }
+        maxMinutes?.apply {
+            min = 0
+            max = 240
+            value = cfg.maxRecordSeconds / 60
+            setOnPreferenceChangeListener { _, _ -> view?.post { pushMax() }; true }
+        }
         maxMinutes?.summary = if (cfg.maxRecordSeconds == 0) "No limit — rolls until you stop it"
         else "Never longer than ${Format.durationLong(cfg.maxRecordSeconds)}"
 
         // ----------------------------------------------------------- detection
         val conf = findPreference<SeekBarPreference>("min_detection_confidence")
-        conf?.apply {
-            min = 20
-            max = 85
-            value = (cfg.minDetectionConfidence * 100).toInt()
-            setOnPreferenceChangeListener { _, _ -> conf.post { pushConf() }; true }
-        }
+        val people = findPreference<SeekBarPreference>("max_people")
+
         fun pushConf() {
             val pct = conf?.value ?: 45
             update(cfg) { it.copy(minDetectionConfidence = (pct / 100f).coerceIn(0.1f, 0.9f)) }
             conf?.summary = "$pct% — lower catches people further away"
-        }
-        conf?.summary = "${(cfg.minDetectionConfidence * 100).toInt()}% — lower catches people further away"
-
-        val people = findPreference<SeekBarPreference>("max_people")
-        people?.apply {
-            min = 1
-            max = 5
-            value = cfg.maxPeople
-            setOnPreferenceChangeListener { _, _ -> people.post { pushPeople() }; true }
         }
         fun pushPeople() {
             val n = people?.value ?: 5
             update(cfg) { it.copy(maxPeople = n.coerceIn(1, 5)) }
             people?.summary = "Track up to $n people at once"
         }
-        people?.summary = "Track up to ${cfg.maxPeople} people at once"
+
+        conf?.apply {
+            min = 20
+            max = 85
+            value = (cfg.minDetectionConfidence * 100).toInt()
+            setOnPreferenceChangeListener { _, _ -> view?.post { pushConf() }; true }
+            summary = "${(cfg.minDetectionConfidence * 100).toInt()}% — lower catches people further away"
+        }
+        people?.apply {
+            min = 1
+            max = 5
+            value = cfg.maxPeople
+            setOnPreferenceChangeListener { _, _ -> view?.post { pushPeople() }; true }
+            summary = "Track up to ${cfg.maxPeople} people at once"
+        }
 
         findPreference<ListPreference>("analysis_fps")?.apply {
             value = cfg.analysisFps.toString()

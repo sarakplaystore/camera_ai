@@ -5,7 +5,6 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
-import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -19,7 +18,6 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
-import androidx.camera.core.TorchState
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -30,26 +28,21 @@ import androidx.camera.video.VideoCapture
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
+import com.sarak.cameraai.MainActivity
 import com.sarak.cameraai.R
 import com.sarak.cameraai.ai.PersonTracker
 import com.sarak.cameraai.ai.PoseDetector
 import com.sarak.cameraai.ai.Scene
 import com.sarak.cameraai.record.RecordPolicy
 import com.sarak.cameraai.record.VideoRecorder
-import com.sarak.cameraai.capture.SceneBridge
 import com.sarak.cameraai.settings.AppPrefs
 import com.sarak.cameraai.settings.Config
 import com.sarak.cameraai.util.Format
 import com.sarak.cameraai.util.ModelManager
-import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
 class CameraService : LifecycleService() {
-
-    init {
-        // Nothing: SceneBridge is populated on first frame (see publishFrame).
-    }
 
     private lateinit var config: Config
     private lateinit var policy: RecordPolicy
@@ -99,7 +92,10 @@ class CameraService : LifecycleService() {
         policy.updateConfig(updated)
         Session.minRecordSeconds = updated.minRecordSeconds
         if (peopleChanged || confChanged || variantChanged) destroyDetector() else Unit
-        if (fpsChanged) analysis?.setTargetFrameRate(android.util.Range(config.analysisFps, config.analysisFps))
+        if (fpsChanged && provider != null) {
+            // Frame-rate limiting happens in onFrame(); rebinding is not required.
+            lastFrameAt = 0L
+        }
         if (minChanged) {
             policy.resetSeenPeople(tracker.active().filter { it.established }.map { it.id })
         }
@@ -215,7 +211,13 @@ class CameraService : LifecycleService() {
 
         try {
             camProvider.unbindAll()
-            camera = camProvider.bindToLifecycle(this, selector, previewUseCase, capture, analyser)
+            camera = camProvider.bindToLifecycle(
+                this as androidx.lifecycle.LifecycleOwner,
+                selector,
+                previewUseCase,
+                capture,
+                analyser,
+            )
             Session.cameraReady = true
             Session.lensFacing = lens
             val ready = camera

@@ -15,14 +15,10 @@ object SceneBridge {
 
     /** Set by MainActivity while it is resumed. */
     @Volatile
-    var ui: OnSceneListener? = null
-
-    interface OnSceneListener {
-        fun onSceneUpdated()
-    }
+    var ui: ((android.graphics.Bitmap?) -> Unit)? = null
 
     fun publish(scene: Scene) {
         this.scene = scene
-        ui?.onSceneUpdated()
+        ui?.invoke(scene.preview)
     }
 }

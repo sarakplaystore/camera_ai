@@ -87,7 +87,7 @@ class MainActivity : AppCompatActivity() {
 
         binding.overlayView.drawBoxes = config.drawBoxes
         binding.overlayView.drawSkeleton = config.drawSkeleton
-        SceneBridge.ui = this
+        SceneBridge.ui = { _ -> onSceneUpdated() }
     }
 
     override fun onStart() {
@@ -111,7 +111,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        if (SceneBridge.ui === this) SceneBridge.ui = null
+        SceneBridge.ui = null
         super.onDestroy()
     }
 
