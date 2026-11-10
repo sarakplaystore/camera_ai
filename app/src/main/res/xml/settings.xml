@@ -19,13 +19,13 @@
 
         <SeekBarPreference
             app:key="min_record_hours"
-            app:max="3"
+            android:max="3"
             app:title="Minimum length — hours"
             app:showSeekBarValue="true" />
 
         <SeekBarPreference
             app:key="min_record_minutes"
-            app:max="59"
+            android:max="59"
             app:title="Minimum length — minutes"
             app:showSeekBarValue="true" />
 
@@ -43,7 +43,7 @@
         <SeekBarPreference
             app:defaultValue="60"
             app:key="max_record_minutes"
-            app:max="240"
+            android:max="240"
             app:title="Maximum clip length — minutes (0 = unlimited)"
             app:showSeekBarValue="true" />
 
@@ -54,14 +54,14 @@
         <SeekBarPreference
             app:defaultValue="45"
             app:key="min_detection_confidence"
-            app:max="85"
+            android:max="85"
             app:title="Detection sensitivity (% confidence)"
             app:showSeekBarValue="true" />
 
         <SeekBarPreference
             app:defaultValue="5"
             app:key="max_people"
-            app:max="5"
+            android:max="5"
             app:title="People to track at once"
             app:showSeekBarValue="true" />
 
