@@ -33,17 +33,51 @@ Unable to strip the following libraries, packaging them as they are: libimage_pr
 > Task :app:extractReleaseNativeSymbolTables
 > Task :app:generateReleaseResources
 > Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
-
-> Task :app:mergeReleaseResources FAILED
-ERROR: [color/ic_launcher_background] /home/runner/work/camera_ai/camera_ai/app/src/main/res/values/ic_launcher_background.xml [color/ic_launcher_background] /home/runner/work/camera_ai/camera_ai/app/src/main/res/values/colors.xml: Resource and asset merger: Duplicate resources
+> Task :app:packageReleaseResources
+> Task :app:mergeReleaseResources
+> Task :app:checkReleaseAarMetadata
+> Task :app:mapReleaseSourceSetPaths
+> Task :app:parseReleaseLocalResources
+> Task :app:createReleaseCompatibleScreenManifests
+> Task :app:dataBindingGenBaseClassesRelease
+> Task :app:extractDeepLinksRelease
+> Task :app:processReleaseMainManifest
+> Task :app:processReleaseManifest
+> Task :app:javaPreCompileRelease
+> Task :app:desugarReleaseFileDependencies
+> Task :app:mergeReleaseStartupProfile
+> Task :app:processReleaseManifestForPackage
+> Task :app:mergeReleaseArtProfile
+> Task :app:mergeReleaseShaders
+> Task :app:compileReleaseShaders NO-SOURCE
+> Task :app:generateReleaseAssets UP-TO-DATE
+> Task :app:mergeReleaseAssets
+> Task :app:extractReleaseVersionControlInfo
+> Task :app:extractProguardFiles
+> Task :app:collectReleaseDependencies
+> Task :app:sdkReleaseDependencyData
+> Task :app:validateSigningRelease
+> Task :app:writeReleaseAppMetadata
+> Task :app:writeReleaseSigningConfigVersions
+> Task :app:processReleaseResources FAILED
+> Task :app:compressReleaseAssets
+> Task :app:mergeExtDexRelease
 
 [Incubating] Problems report is available at: file:///home/runner/work/camera_ai/camera_ai/build/reports/problems/problems-report.html
 
 FAILURE: Build failed with an exception.
 
 * What went wrong:
-Execution failed for task ':app:mergeReleaseResources'.
-> [color/ic_launcher_background] /home/runner/work/camera_ai/camera_ai/app/src/main/res/values/ic_launcher_background.xml	[color/ic_launcher_background] /home/runner/work/camera_ai/camera_ai/app/src/main/res/values/colors.xml: Error: Duplicate resources
+Execution failed for task ':app:processReleaseResources'.
+> A failure occurred while executing com.android.build.gradle.internal.res.LinkApplicationAndroidResourcesTask$TaskAction
+   > Android resource linking failed
+     com.sarak.cameraai.app-main-49:/xml/settings.xml:24: error: attribute max (aka com.sarak.cameraai:max) not found.
+     com.sarak.cameraai.app-main-49:/xml/settings.xml:30: error: attribute max (aka com.sarak.cameraai:max) not found.
+     com.sarak.cameraai.app-main-49:/xml/settings.xml:48: error: attribute max (aka com.sarak.cameraai:max) not found.
+     com.sarak.cameraai.app-main-49:/xml/settings.xml:59: error: attribute max (aka com.sarak.cameraai:max) not found.
+     com.sarak.cameraai.app-main-49:/xml/settings.xml:66: error: attribute max (aka com.sarak.cameraai:max) not found.
+     error: failed linking file resources.
+
 
 * Try:
 > Run with --stacktrace option to get the stack trace.
@@ -57,5 +91,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 1m 9s
-10 actionable tasks: 10 executed
+BUILD FAILED in 1m 37s
+36 actionable tasks: 36 executed
