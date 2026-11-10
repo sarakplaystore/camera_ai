@@ -34,19 +34,20 @@ Unable to strip the following libraries, packaging them as they are: libimage_pr
 > Task :app:generateReleaseResources
 > Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
 > Task :app:packageReleaseResources
-> Task :app:mergeReleaseResources
-> Task :app:checkReleaseAarMetadata
 > Task :app:mapReleaseSourceSetPaths
-> Task :app:parseReleaseLocalResources
 > Task :app:createReleaseCompatibleScreenManifests
-> Task :app:dataBindingGenBaseClassesRelease
+> Task :app:parseReleaseLocalResources
+> Task :app:checkReleaseAarMetadata
 > Task :app:extractDeepLinksRelease
+> Task :app:mergeReleaseResources
 > Task :app:processReleaseMainManifest
+> Task :app:dataBindingGenBaseClassesRelease
 > Task :app:processReleaseManifest
 > Task :app:javaPreCompileRelease
 > Task :app:desugarReleaseFileDependencies
 > Task :app:mergeReleaseStartupProfile
 > Task :app:processReleaseManifestForPackage
+> Task :app:mergeExtDexRelease
 > Task :app:mergeReleaseArtProfile
 > Task :app:mergeReleaseShaders
 > Task :app:compileReleaseShaders NO-SOURCE
@@ -59,25 +60,92 @@ Unable to strip the following libraries, packaging them as they are: libimage_pr
 > Task :app:validateSigningRelease
 > Task :app:writeReleaseAppMetadata
 > Task :app:writeReleaseSigningConfigVersions
-> Task :app:processReleaseResources FAILED
+> Task :app:processReleaseResources
 > Task :app:compressReleaseAssets
-> Task :app:mergeExtDexRelease
+> Task :app:optimizeReleaseResources
+
+> Task :app:compileReleaseKotlin
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/MainActivity.kt:90:26 Assignment type mismatch: actual type is 'com.sarak.cameraai.MainActivity', but 'com.sarak.cameraai.capture.SceneBridge.OnSceneListener?' was expected.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/MainActivity.kt:114:13 Operator '===' cannot be applied to 'com.sarak.cameraai.capture.SceneBridge.OnSceneListener?' and 'com.sarak.cameraai.MainActivity'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/SettingsActivity.kt:82:68 Unresolved reference 'post'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/SettingsActivity.kt:83:66 Unresolved reference 'post'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/SettingsActivity.kt:145:64 Unresolved reference 'post'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/SettingsActivity.kt:145:69 Unresolved reference 'pushMax'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/SettingsActivity.kt:145:71 Unresolved reference 'pushMax'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/SettingsActivity.kt:163:58 Unresolved reference 'post'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/SettingsActivity.kt:163:63 Unresolved reference 'pushConf'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/SettingsActivity.kt:163:65 Unresolved reference 'pushConf'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/SettingsActivity.kt:177:60 Unresolved reference 'post'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/SettingsActivity.kt:177:65 Unresolved reference 'pushPeople'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/SettingsActivity.kt:177:67 Unresolved reference 'pushPeople'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:32:27 Unresolved reference 'LifecycleService'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:48:23 Unresolved reference 'LifecycleService'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:80:5 'onCreate' overrides nothing.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:81:9 Unresolved reference 'LifecycleService'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:81:15 Unresolved reference 'onCreate'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:82:32 Argument type mismatch: actual type is 'com.sarak.cameraai.capture.CameraService', but 'android.content.Context' was expected.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:84:34 Argument type mismatch: actual type is 'com.sarak.cameraai.capture.CameraService', but 'android.content.Context' was expected.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:92:37 Argument type mismatch: actual type is 'com.sarak.cameraai.capture.CameraService', but 'android.content.Context' was expected.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:102:35 Unresolved reference 'setTargetFrameRate'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:110:24 Argument type mismatch: actual type is 'com.sarak.cameraai.capture.CameraService', but 'android.content.Context' was expected.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:113:5 'onStartCommand' overrides nothing.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:114:9 Unresolved reference 'LifecycleService'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:114:15 Unresolved reference 'onStartCommand'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:122:24 Unresolved reference 'START_NOT_STICKY'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:130:40 Argument type mismatch: actual type is 'com.sarak.cameraai.capture.CameraService', but 'android.content.Context' was expected.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:137:16 Unresolved reference 'START_STICKY'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:145:17 Unresolved reference 'startForeground'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:148:17 Unresolved reference 'startForeground'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:151:13 Unresolved reference 'startForeground'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:162:56 Argument type mismatch: actual type is 'com.sarak.cameraai.capture.CameraService', but 'android.content.Context' was expected.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:173:42 Argument type mismatch: actual type is 'com.sarak.cameraai.capture.CameraService', but 'android.content.Context' was expected.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:218:34 Cannot access 'fun bindToLifecycle(lifecycleOwner: LifecycleOwner, primaryCameraSelector: CameraSelector, secondaryCameraSelector: CameraSelector?, primaryLayoutSettings: LayoutSettings, secondaryLayoutSettings: LayoutSettings, viewPort: ViewPort?, effects: List<CameraEffect?>, vararg useCases: UseCase?): Camera': it is internal in 'androidx/camera/lifecycle/ProcessCameraProvider'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:239:55 Argument type mismatch: actual type is 'com.sarak.cameraai.capture.CameraService', but 'android.content.Context' was expected.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:241:34 Argument type mismatch: actual type is 'com.sarak.cameraai.capture.CameraService', but 'android.content.Context' was expected.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:246:34 Argument type mismatch: actual type is 'com.sarak.cameraai.capture.CameraService', but 'android.content.Context' was expected.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:263:41 Unresolved reference 'applicationContext'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:525:17 Unresolved reference 'getString'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:528:31 Unresolved reference 'getString'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:532:13 Unresolved reference 'getSystemService'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:538:13 Argument type mismatch: actual type is 'com.sarak.cameraai.capture.CameraService', but 'android.content.Context!' was expected.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:539:26 Unresolved reference 'MainActivity'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:539:46 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:539:46 Unresolved reference. None of the following candidates is applicable because of a receiver type mismatch:
+val <T> KClass<T>.java: Class<T>
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:539:52 Unresolved reference 'addFlags'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:543:13 Argument type mismatch: actual type is 'com.sarak.cameraai.capture.CameraService', but 'android.content.Context!' was expected.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:544:13 None of the following candidates is applicable:
+constructor(p0: String!, p1: Uri!): Intent
+constructor(p0: Context!, p1: Class<*>!): Intent
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:544:53 Unresolved reference 'setAction'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:548:37 Unresolved reference 'getString'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:552:40 Unresolved reference 'getString'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:553:21 Unresolved reference 'getString'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:555:35 None of the following candidates is applicable:
+constructor(p0: Context, p1: Notification): NotificationCompat.Builder
+constructor(p0: Context, p1: String): NotificationCompat.Builder
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:556:14 Unresolved reference 'setSmallIcon'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:557:30 Unresolved reference 'getString'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:576:18 Unresolved reference 'getSystemService'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:586:5 'onDestroy' overrides nothing.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:588:28 Argument type mismatch: actual type is 'com.sarak.cameraai.capture.CameraService', but 'android.content.Context' was expected.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:599:9 Unresolved reference 'LifecycleService'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:599:15 Unresolved reference 'onDestroy'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:602:5 'onBind' overrides nothing.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:603:9 Unresolved reference 'LifecycleService'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:603:15 Unresolved reference 'onBind'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/capture/CameraService.kt:611:9 Unresolved reference 'stopSelf'.
+
+> Task :app:compileReleaseKotlin FAILED
 
 [Incubating] Problems report is available at: file:///home/runner/work/camera_ai/camera_ai/build/reports/problems/problems-report.html
 
 FAILURE: Build failed with an exception.
 
 * What went wrong:
-Execution failed for task ':app:processReleaseResources'.
-> A failure occurred while executing com.android.build.gradle.internal.res.LinkApplicationAndroidResourcesTask$TaskAction
-   > Android resource linking failed
-     com.sarak.cameraai.app-main-49:/xml/settings.xml:24: error: attribute max (aka com.sarak.cameraai:max) not found.
-     com.sarak.cameraai.app-main-49:/xml/settings.xml:30: error: attribute max (aka com.sarak.cameraai:max) not found.
-     com.sarak.cameraai.app-main-49:/xml/settings.xml:48: error: attribute max (aka com.sarak.cameraai:max) not found.
-     com.sarak.cameraai.app-main-49:/xml/settings.xml:59: error: attribute max (aka com.sarak.cameraai:max) not found.
-     com.sarak.cameraai.app-main-49:/xml/settings.xml:66: error: attribute max (aka com.sarak.cameraai:max) not found.
-     error: failed linking file resources.
-
+Execution failed for task ':app:compileReleaseKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
 
 * Try:
 > Run with --stacktrace option to get the stack trace.
@@ -91,5 +159,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 1m 37s
-36 actionable tasks: 36 executed
+BUILD FAILED in 2m 11s
+38 actionable tasks: 38 executed
