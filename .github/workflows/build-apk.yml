@@ -115,10 +115,13 @@ jobs:
           path: build.log
           retention-days: 7
 
-      - name: Rename artifact
+      - name: Collect APK
         run: |
           mkdir -p out
-          cp app/build/outputs/apk/release/app-release.apk out/camera-ai.apk
+          find app/build/outputs/apk -name "*.apk" -print
+          APK=$(find app/build/outputs/apk -name "*.apk" | head -1)
+          if [ -z "$APK" ]; then echo "no apk produced"; exit 1; fi
+          cp "$APK" out/camera-ai.apk
           ls -la out
 
       - name: Upload APK (workflow artifact)
