@@ -66,7 +66,54 @@ jobs:
             -dname "CN=Camera AI, OU=Apps, O=Sarak, L=Kampot, C=KH"
 
       - name: Build release APK
-        run: ./gradlew :app:assembleRelease --stacktrace --no-daemon
+        id: build
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          ./gradlew :app:assembleRelease --no-daemon 2>&1 | tee build.log
+          echo "GRADLE_EXIT=${PIPESTATUS[0]}" >> $GITHUB_ENV
+
+      - name: Report compile errors on the commit status
+        if: env.GRADLE_EXIT != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'EOF'
+          import json, os, re, subprocess, urllib.request
+
+          log = open('build.log', errors='replace').read()
+          errs = [l.strip() for l in log.splitlines()
+                  if re.match(r'^e: ', l) or ' error: ' in l]
+          # keep it short: status descriptions cap at 140 chars, contexts at 100
+          short = ' | '.join(errs[:6])[:130] or 'gradle failed, no e: lines'
+          payload = json.dumps({
+              "state": "error",
+              "context": "compile/errors",
+              "description": short,
+          }).encode()
+          req = urllib.request.Request(
+              f"https://api.github.com/repos/{os.environ['GITHUB_REPOSITORY']}/statuses/{os.environ['GITHUB_SHA']}",
+              data=payload,
+              headers={
+                  "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                  "Accept": "application/vnd.github+json",
+                  "Content-Type": "application/json",
+              },
+          )
+          print(urllib.request.urlopen(req).status)
+          # Full text goes to a workflow artifact-free place: a comment on the run summary
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'w') as f:
+              f.write("```\n" + "\n".join(errs[:120]) + "\n```\n")
+          EOF
+          exit 1
+
+      - name: Upload Gradle log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-log-${{ github.run_number }}
+          path: build.log
+          retention-days: 7
 
       - name: Rename artifact
         run: |
