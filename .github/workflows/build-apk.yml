@@ -115,6 +115,52 @@ jobs:
           path: build.log
           retention-days: 7
 
+      - name: Mirror log to a branch so it is readable from the repo
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'EOF'
+          import base64, json, os, urllib.request, urllib.error
+
+          repo = os.environ['GITHUB_REPOSITORY']
+          token = os.environ['GH_TOKEN']
+          try:
+              log = open('build.log', errors='replace').read()
+          except FileNotFoundError:
+              log = '(no build.log)'
+          # keep it under GitHub's 1MB contents limit
+          text = log[-900_000:]
+          path = 'build-latest.log'
+          api = f'https://api.github.com/repos/{repo}/contents/{path}'
+          headers = {
+              'Authorization': f'Bearer {token}',
+              'Accept': 'application/vnd.github+json',
+          }
+          sha = None
+          try:
+              req = urllib.request.Request(api + '?ref=ci-logs', headers=headers)
+              with urllib.request.urlopen(req) as r:
+                  sha = json.load(r)['sha']
+          except urllib.error.HTTPError as e:
+              if e.code != 404:
+                  print('read failed', e)
+          payload = {
+              'message': f'ci log run {os.environ.get("GITHUB_RUN_NUMBER")}',
+              'content': base64.b64encode(text.encode()).decode(),
+              'branch': 'ci-logs',
+          }
+          if sha:
+              payload['sha'] = sha
+          req = urllib.request.Request(
+              api, data=json.dumps(payload).encode(), headers=headers, method='PUT')
+          try:
+              with urllib.request.urlopen(req) as r:
+                  print('log mirrored:', r.status)
+          except urllib.error.HTTPError as e:
+              print('mirror failed', e.code, e.read()[:300])
+          EOF
+
       - name: Collect APK
         run: |
           mkdir -p out
