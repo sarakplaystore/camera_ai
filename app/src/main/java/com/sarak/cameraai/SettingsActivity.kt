@@ -40,7 +40,7 @@ class SettingsActivity : AppCompatActivity() {
  */
 class SettingsFragment : PreferenceFragmentCompat() {
 
-    private val view: android.view.View? get() = getView()
+    private val rootView: android.view.View? get() = view
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.settings, rootKey)
@@ -82,11 +82,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
             minSummary?.summary = "Never stops before ${Format.durationLong(safe)}"
         }
         minHours?.setOnPreferenceChangeListener { _, _ ->
-            view?.post { pushMinLength() }
+            rootView?.post { pushMinLength() }
             true
         }
         minMins?.setOnPreferenceChangeListener { _, _ ->
-            view?.post { pushMinLength() }
+            rootView?.post { pushMinLength() }
             true
         }
         minSummary?.summary = "Never stops before ${Format.durationLong(cfg.minRecordSeconds)}"
@@ -157,7 +157,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
             min = 0
             max = 240
             value = cfg.maxRecordSeconds / 60
-            setOnPreferenceChangeListener { _, _ -> view?.post { pushMax() }; true }
+            setOnPreferenceChangeListener { _, _ -> rootView?.post { pushMax() }; true }
         }
         maxMinutes?.summary = if (cfg.maxRecordSeconds == 0) "No limit — rolls until you stop it"
         else "Never longer than ${Format.durationLong(cfg.maxRecordSeconds)}"
@@ -181,14 +181,14 @@ class SettingsFragment : PreferenceFragmentCompat() {
             min = 20
             max = 85
             value = (cfg.minDetectionConfidence * 100).toInt()
-            setOnPreferenceChangeListener { _, _ -> view?.post { pushConf() }; true }
+            setOnPreferenceChangeListener { _, _ -> rootView?.post { pushConf() }; true }
             summary = "${(cfg.minDetectionConfidence * 100).toInt()}% — lower catches people further away"
         }
         people?.apply {
             min = 1
             max = 5
             value = cfg.maxPeople
-            setOnPreferenceChangeListener { _, _ -> view?.post { pushPeople() }; true }
+            setOnPreferenceChangeListener { _, _ -> rootView?.post { pushPeople() }; true }
             summary = "Track up to ${cfg.maxPeople} people at once"
         }
 
