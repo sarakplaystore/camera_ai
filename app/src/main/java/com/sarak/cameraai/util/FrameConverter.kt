@@ -2,7 +2,6 @@ package com.sarak.cameraai.util
 
 import android.graphics.Bitmap
 import android.graphics.Matrix
-import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 
 /**
@@ -19,15 +18,6 @@ import androidx.camera.core.ImageProxy
  * mirror the selfie camera so the coordinates match the mirrored preview.
  */
 object FrameConverter {
-
-    /** True when CameraX can hand us RGBA_8888, i.e. the fast path is available. */
-    fun supportsDirectRgba(width: Int, height: Int): Boolean =
-        ImageAnalysis.isImageProxyFormatSupported(
-            ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888,
-            ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888,
-            width,
-            height,
-        ) != null
 
     /**
      * @return an upright bitmap, or null when the frame cannot be read.
