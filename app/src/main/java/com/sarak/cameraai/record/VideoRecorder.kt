@@ -11,11 +11,11 @@ import android.provider.MediaStore
 import android.util.Log
 import androidx.camera.video.FileOutputOptions
 import androidx.camera.video.MediaStoreOutputOptions
-import androidx.camera.video.OutputOptions
 import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
+import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import com.sarak.cameraai.util.Format
 import java.io.File
@@ -104,24 +104,33 @@ class VideoRecorder(
         if (takeTag.isEmpty()) beginTake()
         segment++
         val name = "CCTV_${takeTag}_${"%03d".format(segment)}.mp4"
-        val options = outputOptions(name)
-
-        val prepare = try {
-            capture.output.prepareRecording(context, options)
+        val output = capture.output
+        val pending: androidx.camera.video.PendingRecording = try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                output.prepareRecording(context, mediaStoreOptions(name))
+            } else {
+                output.prepareRecording(
+                    context,
+                    FileOutputOptions.Builder(File(outputDir(), name)).build(),
+                )
+            }
         } catch (t: Throwable) {
             onEvent(Event.Failed("Could not open the encoder: ${t.message}"))
             return false
         }
-        val configured = if (withAudio && hasAudioPermission()) {
-            try {
-                prepare.withAudioEnabled()
-            } catch (t: Throwable) {
-                Log.w(TAG, "audio unavailable, recording muted", t)
-                prepare
+
+        val configured: androidx.camera.video.PendingRecording =
+            if (withAudio && hasAudioPermission()) {
+                try {
+                    pending.withAudioEnabled()
+                } catch (t: Throwable) {
+                    Log.w(TAG, "audio unavailable, recording muted", t)
+                    pending
+                }
+            } else {
+                pending
             }
-        } else {
-            prepare
-        }
+
         starting = true
         active = try {
             configured.start(ContextCompat.getMainExecutor(context)) { event ->
@@ -135,19 +144,17 @@ class VideoRecorder(
         return active != null
     }
 
-    private fun outputOptions(name: String): OutputOptions {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val values = ContentValues().apply {
-                put(MediaStore.Video.Media.DISPLAY_NAME, name)
-                put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
-                put(MediaStore.Video.Media.RELATIVE_PATH, ClipStore.RELATIVE_PATH)
-            }
-            return MediaStoreOutputOptions.Builder(
-                context.contentResolver,
-                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-            ).setContentValues(values).build()
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun mediaStoreOptions(name: String): MediaStoreOutputOptions {
+        val values = ContentValues().apply {
+            put(MediaStore.Video.Media.DISPLAY_NAME, name)
+            put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
+            put(MediaStore.Video.Media.RELATIVE_PATH, ClipStore.RELATIVE_PATH)
         }
-        return FileOutputOptions.Builder(File(outputDir(), name)).build()
+        return MediaStoreOutputOptions.Builder(
+            context.contentResolver,
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+        ).setContentValues(values).build()
     }
 
     private fun handle(event: VideoRecordEvent, name: String) {
@@ -172,7 +179,8 @@ class VideoRecorder(
                 if (hardFailure) Log.w(TAG, "finalize error $error for $name")
 
                 val uri = event.outputResults.outputUri
-                val reportedMs = runCatching { event.outputResults.durationMs }.getOrDefault(duration)
+                val reportedMs = runCatching { event.outputResults.durationNanos / 1_000_000 }
+                    .getOrDefault(duration)
                 val bytes = ClipStore.sizeOf(context, uri, name)
                 if (bytes > 0 || (uri != null && uri != Uri.EMPTY)) {
                     onEvent(Event.SegmentSaved(name, reportedMs, bytes, uri))

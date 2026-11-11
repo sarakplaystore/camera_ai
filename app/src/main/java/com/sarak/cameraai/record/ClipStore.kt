@@ -22,7 +22,8 @@ data class Clip(
     val file: File? = null,
 ) {
     val takeTag: String
-        get() = name.removePrefix("CCTV_").substringBeforeLast("_", fallback = name.removeSuffix(".mp4"))
+        get() = name.substringAfter("CCTV_", name.removeSuffix(".mp4"))
+            .substringBeforeLast("_", name.removeSuffix(".mp4"))
 }
 
 /**

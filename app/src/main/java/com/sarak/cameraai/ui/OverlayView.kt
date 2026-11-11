@@ -160,8 +160,7 @@ class OverlayView @JvmOverloads constructor(
     }
 
     private companion object {
-        const val TRACK_COLOR = "#FF1DB954"
-        val TRACK_COLOR_INT = Color.parseColor(TRACK_COLOR)
-        val RECORD_COLOR = Color.parseColor("#FFFF3B30")
+        val TRACK_COLOR: Int = Color.parseColor("#FF1DB954")
+        val RECORD_COLOR: Int = Color.parseColor("#FFFF3B30")
     }
 }
