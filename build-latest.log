@@ -19,28 +19,28 @@ Daemon will be stopped at the end of the build
 > Task :app:generateReleaseResValues FROM-CACHE
 > Task :app:generateReleaseResources
 > Task :app:packageReleaseResources
-> Task :app:mergeReleaseResources
 > Task :app:checkReleaseAarMetadata
-> Task :app:parseReleaseLocalResources
 > Task :app:mapReleaseSourceSetPaths
-> Task :app:dataBindingGenBaseClassesRelease
 > Task :app:createReleaseCompatibleScreenManifests
 > Task :app:extractDeepLinksRelease FROM-CACHE
+> Task :app:parseReleaseLocalResources
 > Task :app:processReleaseMainManifest FROM-CACHE
 > Task :app:processReleaseManifest FROM-CACHE
 > Task :app:processReleaseManifestForPackage FROM-CACHE
 > Task :app:javaPreCompileRelease FROM-CACHE
 > Task :app:preReleaseUnitTestBuild UP-TO-DATE
 > Task :app:javaPreCompileReleaseUnitTest FROM-CACHE
+> Task :app:mergeReleaseResources
+> Task :app:dataBindingGenBaseClassesRelease
 > Task :app:processReleaseResources
 
 > Task :app:compileReleaseKotlin
 w: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/record/VideoRecorder.kt:186:35 Condition is always 'true'.
 
 > Task :app:compileReleaseJavaWithJavac
+> Task :app:processReleaseJavaRes
 > Task :app:bundleReleaseClassesToRuntimeJar
 > Task :app:bundleReleaseClassesToCompileJar
-> Task :app:processReleaseJavaRes
 > Task :app:compileReleaseUnitTestKotlin
 > Task :app:compileReleaseUnitTestJavaWithJavac NO-SOURCE
 > Task :app:processReleaseUnitTestJavaRes
@@ -54,16 +54,16 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD SUCCESSFUL in 28s
+BUILD SUCCESSFUL in 24s
 26 actionable tasks: 19 executed, 7 from cache
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
 > Task :app:preBuild UP-TO-DATE
 > Task :app:preReleaseBuild UP-TO-DATE
 > Task :app:mergeReleaseJniLibFolders
+> Task :app:mergeReleaseNativeLibs
 > Task :app:checkReleaseDuplicateClasses
 > Task :app:buildKotlinToolingMetadata UP-TO-DATE
-> Task :app:mergeReleaseNativeLibs
 > Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
 
 > Task :app:stripReleaseDebugSymbols
@@ -106,11 +106,11 @@ Unable to strip the following libraries, packaging them as they are: libimage_pr
 > Task :app:processReleaseJavaRes UP-TO-DATE
 > Task :app:mergeReleaseJavaResource
 > Task :app:collectReleaseDependencies
-> Task :app:optimizeReleaseResources
 > Task :app:sdkReleaseDependencyData
 > Task :app:validateSigningRelease
 > Task :app:writeReleaseAppMetadata
 > Task :app:writeReleaseSigningConfigVersions
+> Task :app:optimizeReleaseResources
 > Task :app:mergeDexRelease
 > Task :app:compileReleaseArtProfile
 > Task :app:lintVitalAnalyzeRelease
@@ -128,5 +128,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD SUCCESSFUL in 23s
+BUILD SUCCESSFUL in 24s
 51 actionable tasks: 26 executed, 5 from cache, 20 up-to-date
