@@ -65,6 +65,9 @@ jobs:
             -storepass cameraai2026 -keypass cameraai2026 \
             -dname "CN=Camera AI, OU=Apps, O=Sarak, L=Kampot, C=KH"
 
+      - name: Unit tests (recording policy)
+        run: ./gradlew :app:testReleaseUnitTest --no-daemon
+
       - name: Build release APK
         id: build
         continue-on-error: true
