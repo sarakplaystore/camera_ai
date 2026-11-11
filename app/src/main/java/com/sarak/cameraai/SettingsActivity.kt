@@ -169,7 +169,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         fun pushConf() {
             val pct = conf?.value ?: 45
             update(cfg) { it.copy(minDetectionConfidence = (pct / 100f).coerceIn(0.1f, 0.9f)) }
-            conf?.summary = "$pct% — lower catches people further away"
+            conf?.summary = "$pct% — lower finds people further away and in poor light"
         }
         fun pushPeople() {
             val n = people?.value ?: 5
@@ -182,7 +182,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
             max = 85
             value = (cfg.minDetectionConfidence * 100).toInt()
             setOnPreferenceChangeListener { _, _ -> rootView?.post { pushConf() }; true }
-            summary = "${(cfg.minDetectionConfidence * 100).toInt()}% — lower catches people further away"
+            summary = "${(cfg.minDetectionConfidence * 100).toInt()}% — lower finds people further away and in poor light"
         }
         people?.apply {
             min = 1
@@ -208,10 +208,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 val variant = new as? String ?: "lite"
                 update(cfg) { it.copy(modelVariant = variant) }
                 (pref as ListPreference).summary =
-                    if (variant == "full") "Most accurate — a little slower" else "Fastest — good for phones"
+                    if (variant == "full") "Most accurate — best for detection range"
+                    else "Fastest — good for phones"
                 true
             }
-            summary = if (cfg.modelVariant == "full") "Most accurate — a little slower"
+            summary = if (cfg.modelVariant == "full") "Most accurate — best for detection range"
             else "Fastest — good for phones"
         }
 

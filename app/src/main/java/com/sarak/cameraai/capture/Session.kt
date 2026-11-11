@@ -15,6 +15,12 @@ object Session {
     @Volatile var recording: Boolean = false
     @Volatile var peopleCount: Int = 0
     @Volatile var inferenceMs: Long = 0L
+
+    /** Raw detections the model returned last frame (before filtering). */
+    @Volatile var rawDetections: Int = 0
+
+    /** True when the landmarker is running on the GPU delegate. */
+    @Volatile var usingGpu: Boolean = false
     @Volatile var statusLine: String = ""
     @Volatile var subStatusLine: String = ""
     @Volatile var lastTrigger: String = ""

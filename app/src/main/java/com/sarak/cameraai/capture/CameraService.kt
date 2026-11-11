@@ -38,6 +38,7 @@ import com.sarak.cameraai.record.VideoRecorder
 import com.sarak.cameraai.settings.AppPrefs
 import com.sarak.cameraai.settings.Config
 import com.sarak.cameraai.util.Format
+import com.sarak.cameraai.util.FrameConverter
 import com.sarak.cameraai.util.ModelManager
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
@@ -205,8 +206,10 @@ class CameraService : LifecycleService() {
 
         val resolution = ResolutionSelector.Builder()
             .setResolutionStrategy(
+                // 720p gives the model a sharper downsample than 480p, which
+                // directly improves detection of people further from the lens.
                 ResolutionStrategy(
-                    android.util.Size(640, 480),
+                    android.util.Size(1280, 720),
                     ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER,
                 ),
             )
@@ -275,6 +278,7 @@ class CameraService : LifecycleService() {
                 detector?.close()
                 detector = PoseDetector(applicationContext, config.maxPeople, config.minDetectionConfidence, config.modelVariant)
                 detector?.setup()
+                Session.usingGpu = detector?.usingGpu == true
                 detectorConfig = config
                 Session.error = null
                 Session.modelState = "ready"
@@ -307,9 +311,10 @@ class CameraService : LifecycleService() {
         lastFrameAt = now
         frameRotation = proxy.imageInfo.rotationDegrees
 
-        val bitmap = try {
-            proxy.toBitmap()
-        } catch (t: Throwable) {
+        // Rotate the sensor buffer upright before the model sees it: a
+        // sideways frame is the main cause of missed/incorrect detections.
+        val bitmap = FrameConverter.toUprightBitmap(proxy, mirror = Session.lensFacing == 1)
+        if (bitmap == null) {
             proxy.close()
             return
         }
@@ -318,7 +323,7 @@ class CameraService : LifecycleService() {
         if (detectorNow == null || !detectorNow.isReady) {
             proxy.close()
             ensureDetectorAsync()
-            publishFrame(emptyList(), bitmap.width, bitmap.height, 0)
+            publishFrame(emptyList(), bitmap.width, bitmap.height, 0, rotation = 0)
             bitmap.recycle()
             return
         }
@@ -331,7 +336,9 @@ class CameraService : LifecycleService() {
             emptyList()
         }
         val inference = SystemClock.elapsedRealtime() - started
-        publishFrame(detections, bitmap.width, bitmap.height, inference)
+        // Landmarks now index the upright bitmap, so the overlay must map them
+        // straight onto the preview rect (no extra rotation).
+        publishFrame(detections, bitmap.width, bitmap.height, inference, rotation = 0)
         bitmap.recycle()
         proxy.close()
     }
@@ -341,12 +348,17 @@ class CameraService : LifecycleService() {
         w: Int,
         h: Int,
         inference: Long,
+        rotation: Int = 0,
     ) {
         analyzing = true
         val now = SystemClock.elapsedRealtime()
 
-        // Only faces/people big enough to matter; tiny background people are noise.
-        val filtered = detections.filter { it.height >= 0.10f && it.score >= config.minDetectionConfidence }
+        // The model already applied minDetectionConfidence; only drop bodies so
+        // small that they cannot be a person at this distance. Being greedy here
+        // is what made people in the background "invisible".
+        val filtered = tracker.dedupe(
+            detections.filter { it.height >= MIN_PERSON_HEIGHT },
+        )
         val tracks = tracker.update(filtered, now)
         val established = tracks.filter { it.established }
 
@@ -356,12 +368,13 @@ class CameraService : LifecycleService() {
             w,
             h,
             Session.lensFacing,
-            frameRotation,
+            rotation,
             System.currentTimeMillis(),
             inference,
         )
         SceneBridge.publish(scene)
         Session.peopleCount = list.size
+        Session.rawDetections = detections.size
         Session.inferenceMs = inference
 
         runPolicy(established.map { it.id }, filtered.size, list.size, now)
@@ -652,6 +665,9 @@ class CameraService : LifecycleService() {
 
     companion object {
         private const val TAG = "CameraService"
+
+        /** A body shorter than this fraction of the frame is not a usable subject. */
+        private const val MIN_PERSON_HEIGHT = 0.04f
         const val CHANNEL_ID = "camera_ai_watch"
         const val NOTIF_ID = 42
 

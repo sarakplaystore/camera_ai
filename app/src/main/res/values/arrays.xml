@@ -15,11 +15,13 @@
         <item>5 fps — battery saver</item>
         <item>10 fps — recommended</item>
         <item>15 fps — snappier</item>
+        <item>20 fps — best catch rate</item>
     </string-array>
     <string-array name="fps_values">
         <item>5</item>
         <item>10</item>
         <item>15</item>
+        <item>20</item>
     </string-array>
 
     <string-array name="model_entries">

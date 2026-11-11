@@ -28,23 +28,46 @@ class PoseDetector(
 
     val isReady: Boolean get() = landmarker != null
 
-    /** Throws when the model cannot be opened; caller falls back to download mode. */
+    /** True when the landmarker was opened on the GPU delegate. */
+    @Volatile
+    var usingGpu: Boolean = false
+        private set
+
+    /**
+     * Opens the landmarker. Tries the GPU delegate first (several times faster,
+     * which lets the app analyse more frames and react sooner) and falls back to
+     * CPU on devices/drivers where it is unavailable.
+     */
     fun setup() {
         close()
-        val options = PoseLandmarker.PoseLandmarkerOptions.builder()
-            .setBaseOptions(baseOptions())
-            .setRunningMode(RunningMode.VIDEO)
-            .setNumPoses(maxPeople.coerceIn(1, 5))
-            .setMinPoseDetectionConfidence(minConfidence)
-            .setMinPosePresenceConfidence(minConfidence)
-            .setMinTrackingConfidence(0.4f)
-            .setOutputSegmentationMasks(false)
-            .build()
-        landmarker = PoseLandmarker.createFromOptions(context, options)
+        landmarker = try {
+            PoseLandmarker.createFromOptions(context, options(Delegate.GPU)).also {
+                usingGpu = true
+            }
+        } catch (t: Throwable) {
+            Log.i(TAG, "GPU delegate unavailable, using CPU", t)
+            PoseLandmarker.createFromOptions(context, options(Delegate.CPU)).also {
+                usingGpu = false
+            }
+        }
     }
 
-    private fun baseOptions(): BaseOptions {
-        val builder = BaseOptions.builder().setDelegate(Delegate.CPU)
+    private fun options(delegate: Delegate): PoseLandmarker.PoseLandmarkerOptions =
+        PoseLandmarker.PoseLandmarkerOptions.builder()
+            .setBaseOptions(baseOptions(delegate))
+            .setRunningMode(RunningMode.VIDEO)
+            .setNumPoses(maxPeople.coerceIn(1, 5))
+            // Detection/presence control *whether a person is found at all*.
+            // Keeping these lower than the tracking confidence is what lets us
+            // pick up people who are small, partly occluded or in poor light.
+            .setMinPoseDetectionConfidence((minConfidence * 0.9f).coerceIn(0.1f, 0.9f))
+            .setMinPosePresenceConfidence((minConfidence * 0.9f).coerceIn(0.1f, 0.9f))
+            .setMinTrackingConfidence(0.35f)
+            .setOutputSegmentationMasks(false)
+            .build()
+
+    private fun baseOptions(delegate: Delegate): BaseOptions {
+        val builder = BaseOptions.builder().setDelegate(delegate)
         if (ModelManager.isAssetBundled(context, variant)) {
             builder.setModelAssetPath(ModelManager.fileNameFor(variant))
         } else {
@@ -99,14 +122,20 @@ class PoseDetector(
                     if (lm.y() > maxY) maxY = lm.y()
                 }
             }
+            // A person at the far end of a room or half behind a door will not
+            // have many confident joints. Requiring only the head OR a shoulder
+            // keeps them tracked instead of dropping them.
             if (visible < MIN_VISIBLE_POINTS) continue
-            if (KP.reliableCoreCount(raw.filterIndexed { idx, _ -> idx % 4 == 3 }.toFloatArray()) < 2) {
-                // still allow partial bodies, but require at least a head+shoulder
-                if (raw[KP.NOSE * 4 + 3] < 0.4f) continue
-            }
+            val hasHead = raw[KP.NOSE * 4 + 3] >= 0.35f ||
+                    raw[KP.LEFT_EYE * 4 + 3] >= 0.35f ||
+                    raw[KP.RIGHT_EYE * 4 + 3] >= 0.35f
+            val hasShoulder = raw[KP.LEFT_SHOULDER * 4 + 3] >= 0.35f ||
+                    raw[KP.RIGHT_SHOULDER * 4 + 3] >= 0.35f
+            if (!hasHead && !hasShoulder) continue
             val pad = 0.02f
             val person = Person(
                 score = (confidenceSum / visible).coerceIn(0f, 1f),
+                // ^ visibility average; the bounding box below is what the UI shows
                 raw = raw,
                 left = (minX - pad).coerceIn(0f, 1f),
                 top = (minY - pad).coerceIn(0f, 1f),
@@ -138,6 +167,6 @@ class PoseDetector(
 
     companion object {
         private const val TAG = "PoseDetector"
-        private const val MIN_VISIBLE_POINTS = 6
+        private const val MIN_VISIBLE_POINTS = 4
     }
 }

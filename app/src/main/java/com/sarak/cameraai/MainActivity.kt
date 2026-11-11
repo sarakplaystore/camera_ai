@@ -199,6 +199,17 @@ class MainActivity : AppCompatActivity() {
             binding.btnRecord.setTextColor(ContextCompat.getColor(this, R.color.brand))
         }
 
+        // Live accuracy readout: proves whether the model sees people at all,
+        // which separates "detector is blind" from "tracker/render is wrong".
+        binding.tvBadgeDebug.text = buildString {
+            append(if (Session.usingGpu) "GPU" else "CPU")
+            append(" · ")
+            append("${Session.rawDetections} found")
+            append(" · ")
+            append("${Session.inferenceMs}ms")
+        }
+        binding.tvBadgeDebug.visibility = if (Session.cameraReady) View.VISIBLE else View.GONE
+
         binding.tvHint.text = when {
             Session.error != null -> "⚠ ${Session.error}"
             config.triggerMode == Config.TRIGGER_SECOND_PERSON ->
