@@ -1,5 +1,3 @@
-Downloading https://services.gradle.org/distributions/gradle-8.14.3-bin.zip
-.............10%.............20%.............30%.............40%.............50%.............60%.............70%.............80%.............90%..............100%
 
 Welcome to Gradle 8.14.3!
 
@@ -13,73 +11,85 @@ For more details see https://docs.gradle.org/8.14.3/release-notes.html
 
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
-
-> Configure project :app
-w: file:///home/runner/work/camera_ai/camera_ai/app/build.gradle.kts:18:9: 'resourceConfigurations: MutableSet<String>' is deprecated. Support for resource configurations will be removed. For language resource configurations in applications, use androidResources.localeFilters.
-
 > Task :app:preBuild UP-TO-DATE
 > Task :app:preReleaseBuild UP-TO-DATE
 > Task :app:mergeReleaseJniLibFolders
-> Task :app:mergeReleaseNativeLibs
+> Task :app:checkReleaseDuplicateClasses
 > Task :app:buildKotlinToolingMetadata
 > Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :app:checkReleaseDuplicateClasses
+> Task :app:mergeReleaseNativeLibs
+> Task :app:dataBindingMergeDependencyArtifactsRelease
+> Task :app:generateReleaseResValues FROM-CACHE
+> Task :app:generateReleaseResources
 
 > Task :app:stripReleaseDebugSymbols
 Unable to strip the following libraries, packaging them as they are: libimage_processing_util_jni.so, libmediapipe_tasks_vision_jni.so, libsurface_util_jni.so.
 
-> Task :app:dataBindingMergeDependencyArtifactsRelease
-> Task :app:generateReleaseResValues
-> Task :app:generateReleaseResources
-> Task :app:extractReleaseNativeSymbolTables
+> Task :app:extractReleaseNativeSymbolTables FROM-CACHE
 > Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
 > Task :app:packageReleaseResources
 > Task :app:mergeReleaseResources
+> Task :app:parseReleaseLocalResources
 > Task :app:checkReleaseAarMetadata
+> Task :app:dataBindingGenBaseClassesRelease
 > Task :app:mapReleaseSourceSetPaths
 > Task :app:createReleaseCompatibleScreenManifests
-> Task :app:parseReleaseLocalResources
-> Task :app:extractDeepLinksRelease
-> Task :app:dataBindingGenBaseClassesRelease
-> Task :app:processReleaseMainManifest
-> Task :app:processReleaseManifest
-> Task :app:javaPreCompileRelease
-> Task :app:desugarReleaseFileDependencies
+> Task :app:extractDeepLinksRelease FROM-CACHE
+> Task :app:processReleaseMainManifest FROM-CACHE
+> Task :app:processReleaseManifest FROM-CACHE
+> Task :app:processReleaseManifestForPackage FROM-CACHE
+> Task :app:javaPreCompileRelease FROM-CACHE
+> Task :app:desugarReleaseFileDependencies FROM-CACHE
 > Task :app:mergeReleaseStartupProfile
+> Task :app:mergeExtDexRelease FROM-CACHE
 > Task :app:mergeReleaseArtProfile
-> Task :app:processReleaseManifestForPackage
 > Task :app:mergeReleaseShaders
 > Task :app:compileReleaseShaders NO-SOURCE
 > Task :app:generateReleaseAssets UP-TO-DATE
 > Task :app:mergeReleaseAssets
+> Task :app:compressReleaseAssets FROM-CACHE
 > Task :app:extractReleaseVersionControlInfo
 > Task :app:extractProguardFiles
-> Task :app:mergeExtDexRelease
 > Task :app:collectReleaseDependencies
+> Task :app:processReleaseResources
 > Task :app:sdkReleaseDependencyData
 > Task :app:validateSigningRelease
 > Task :app:writeReleaseAppMetadata
 > Task :app:writeReleaseSigningConfigVersions
-> Task :app:processReleaseResources
-> Task :app:compressReleaseAssets
 > Task :app:optimizeReleaseResources
-> Task :app:compileReleaseKotlin
-> Task :app:compileReleaseJavaWithJavac
-> Task :app:dexBuilderRelease
-> Task :app:mergeReleaseGlobalSynthetics
-> Task :app:generateReleaseLintVitalReportModel
-> Task :app:mergeDexRelease
-> Task :app:processReleaseJavaRes
-> Task :app:compileReleaseArtProfile
-> Task :app:mergeReleaseJavaResource
-> Task :app:lintVitalAnalyzeRelease
-> Task :app:lintVitalReportRelease
-> Task :app:lintVitalRelease
-> Task :app:packageRelease
-> Task :app:createReleaseApkListingFileRedirect
-> Task :app:assembleRelease
+
+> Task :app:compileReleaseKotlin FAILED
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/record/ClipStore.kt:25:44 None of the following candidates is applicable:
+fun String.substringBeforeLast(delimiter: Char, missingDelimiterValue: String = ...): String
+fun String.substringBeforeLast(delimiter: String, missingDelimiterValue: String = ...): String
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/record/VideoRecorder.kt:110:28 None of the following candidates is applicable:
+fun prepareRecording(p0: Context, p1: FileOutputOptions): PendingRecording
+fun prepareRecording(p0: Context, p1: FileDescriptorOutputOptions): PendingRecording
+fun prepareRecording(p0: Context, p1: MediaStoreOutputOptions): PendingRecording
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/record/VideoRecorder.kt:117:25 Unresolved reference 'withAudioEnabled'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/record/VideoRecorder.kt:127:24 Unresolved reference 'start'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/record/VideoRecorder.kt:127:72 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/record/VideoRecorder.kt:175:34 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/record/VideoRecorder.kt:175:46 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/record/VideoRecorder.kt:175:68 Unresolved reference 'durationMs'.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/ui/OverlayView.kt:79:26 Assignment type mismatch: actual type is 'it(kotlin.Comparable<*> & java.io.Serializable)', but 'kotlin.Int' was expected.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/ui/OverlayView.kt:80:27 Assignment type mismatch: actual type is 'it(kotlin.Comparable<*> & java.io.Serializable)', but 'kotlin.Int' was expected.
+e: file:///home/runner/work/camera_ai/camera_ai/app/src/main/java/com/sarak/cameraai/ui/OverlayView.kt:81:27 Assignment type mismatch: actual type is 'it(kotlin.Comparable<*> & java.io.Serializable)', but 'kotlin.Int' was expected.
 
 [Incubating] Problems report is available at: file:///home/runner/work/camera_ai/camera_ai/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileReleaseKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
 
 Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
 
@@ -87,5 +97,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD SUCCESSFUL in 2m 14s
-51 actionable tasks: 51 executed
+BUILD FAILED in 22s
+38 actionable tasks: 28 executed, 10 from cache
