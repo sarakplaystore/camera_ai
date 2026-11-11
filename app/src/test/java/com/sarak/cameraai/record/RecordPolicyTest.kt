@@ -55,17 +55,28 @@ class RecordPolicyTest {
         p.onFrame(now, listOf(1, 2), 2, false, 0)
         p.onFrame(now, listOf(1, 2), 2, true, 0)
 
-        // From 10 s in, the frame is empty. The take must survive to 10 minutes.
+        // From 10 s in the frame is empty. The take must survive to 10 minutes;
+        // the only allowed interruptions are the 4-minute segment rotations.
+        var segmentStart = 0L
+        var rotations = 0
         while (now < tenMinutes - 1000) {
             now += 500
             val ids = if (now < 10_000) listOf(1, 2) else emptyList()
-            val action = p.onFrame(now, ids, ids.size, true, now)
-            assertEquals("stopped early at $now", RecordPolicy.Action.NONE, action)
+            when (val action = p.onFrame(now, ids, ids.size, true, now - segmentStart)) {
+                RecordPolicy.Action.NONE -> Unit
+                RecordPolicy.Action.ROTATE -> {
+                    rotations++
+                    segmentStart = now
+                    p.onSegmentStarted(now)
+                }
+                else -> throw AssertionError("stopped early at $now with $action")
+            }
         }
+        assertTrue("expected segment rotations during a 10 minute take", rotations >= 2)
 
         // Past the minimum, with nobody in frame and the grace window elapsed.
         now = tenMinutes + 31_000
-        assertEquals(RecordPolicy.Action.STOP, p.onFrame(now, emptyList(), 0, true, now))
+        assertEquals(RecordPolicy.Action.STOP, p.onFrame(now, emptyList(), 0, true, now - segmentStart))
     }
 
     @Test
