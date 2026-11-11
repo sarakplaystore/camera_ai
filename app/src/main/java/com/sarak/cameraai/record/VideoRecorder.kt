@@ -179,8 +179,9 @@ class VideoRecorder(
                 if (hardFailure) Log.w(TAG, "finalize error $error for $name")
 
                 val uri = event.outputResults.outputUri
-                val reportedMs = runCatching { event.outputResults.durationNanos / 1_000_000 }
-                    .getOrDefault(duration)
+                // Wall-clock duration of this segment; the encoder's own duration
+                // metadata is not reliable across every device/API level.
+                val reportedMs = duration
                 val bytes = ClipStore.sizeOf(context, uri, name)
                 if (bytes > 0 || (uri != null && uri != Uri.EMPTY)) {
                     onEvent(Event.SegmentSaved(name, reportedMs, bytes, uri))
