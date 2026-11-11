@@ -19,19 +19,19 @@ Daemon will be stopped at the end of the build
 > Task :app:generateReleaseResValues FROM-CACHE
 > Task :app:generateReleaseResources
 > Task :app:packageReleaseResources
+> Task :app:mergeReleaseResources
+> Task :app:checkReleaseAarMetadata
 > Task :app:mapReleaseSourceSetPaths
 > Task :app:createReleaseCompatibleScreenManifests
-> Task :app:extractDeepLinksRelease FROM-CACHE
-> Task :app:checkReleaseAarMetadata
 > Task :app:parseReleaseLocalResources
+> Task :app:dataBindingGenBaseClassesRelease
+> Task :app:extractDeepLinksRelease FROM-CACHE
 > Task :app:processReleaseMainManifest FROM-CACHE
 > Task :app:processReleaseManifest FROM-CACHE
 > Task :app:processReleaseManifestForPackage FROM-CACHE
 > Task :app:javaPreCompileRelease FROM-CACHE
 > Task :app:preReleaseUnitTestBuild UP-TO-DATE
 > Task :app:javaPreCompileReleaseUnitTest FROM-CACHE
-> Task :app:mergeReleaseResources
-> Task :app:dataBindingGenBaseClassesRelease
 > Task :app:processReleaseResources
 
 > Task :app:compileReleaseKotlin FAILED
