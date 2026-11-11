@@ -1,0 +1,202 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main, "arena/**"]
+    paths-ignore:
+      - "**.md"
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Assemble release APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          ls "$ANDROID_HOME" || true
+          SDKMGR=$(command -v sdkmanager || echo "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager")
+          echo "Using $SDKMGR"
+          yes | "$SDKMGR" --licenses > /dev/null 2>&1 || true
+          "$SDKMGR" --install "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          cat local.properties
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: Download pose model (bundled into the APK)
+        run: |
+          mkdir -p app/src/main/assets
+          curl -fSL --retry 3 -o app/src/main/assets/pose_landmarker_lite.task \
+            https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/latest/pose_landmarker_lite.task
+          curl -fSL --retry 3 -o app/src/main/assets/pose_landmarker_full.task \
+            https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task
+          ls -la app/src/main/assets
+
+      - name: Generate signing keystore
+        run: |
+          keytool -genkeypair -v -keystore app/keystore.p12 -storetype PKCS12 \
+            -alias cameraai -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass cameraai2026 -keypass cameraai2026 \
+            -dname "CN=Camera AI, OU=Apps, O=Sarak, L=Kampot, C=KH"
+
+      - name: Unit tests (recording policy)
+        run: |
+          set -o pipefail
+          ./gradlew :app:testReleaseUnitTest --no-daemon 2>&1 | tee build.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Build release APK
+        id: build
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          ./gradlew :app:assembleRelease --no-daemon 2>&1 | tee -a build.log
+          echo "GRADLE_EXIT=${PIPESTATUS[0]}" >> $GITHUB_ENV
+
+      - name: Report compile errors on the commit status
+        if: env.GRADLE_EXIT != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'EOF'
+          import json, os, re, subprocess, urllib.request
+
+          log = open('build.log', errors='replace').read()
+          errs = [l.strip() for l in log.splitlines()
+                  if re.match(r'^e: ', l) or ' error: ' in l]
+          # keep it short: status descriptions cap at 140 chars, contexts at 100
+          short = ' | '.join(errs[:6])[:130] or 'gradle failed, no e: lines'
+          payload = json.dumps({
+              "state": "error",
+              "context": "compile/errors",
+              "description": short,
+          }).encode()
+          req = urllib.request.Request(
+              f"https://api.github.com/repos/{os.environ['GITHUB_REPOSITORY']}/statuses/{os.environ['GITHUB_SHA']}",
+              data=payload,
+              headers={
+                  "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                  "Accept": "application/vnd.github+json",
+                  "Content-Type": "application/json",
+              },
+          )
+          print(urllib.request.urlopen(req).status)
+          # Full text goes to a workflow artifact-free place: a comment on the run summary
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'w') as f:
+              f.write("```\n" + "\n".join(errs[:120]) + "\n```\n")
+          EOF
+          exit 1
+
+      - name: Upload Gradle log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-log-${{ github.run_number }}
+          path: build.log
+          retention-days: 7
+
+      - name: Mirror log to a branch so it is readable from the repo
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'EOF'
+          import base64, json, os, urllib.request, urllib.error
+
+          repo = os.environ['GITHUB_REPOSITORY']
+          token = os.environ['GH_TOKEN']
+          try:
+              log = open('build.log', errors='replace').read()
+          except FileNotFoundError:
+              log = '(no build.log)'
+          # keep it under GitHub's 1MB contents limit
+          text = log[-900_000:]
+          path = 'build-latest.log'
+          api = f'https://api.github.com/repos/{repo}/contents/{path}'
+          headers = {
+              'Authorization': f'Bearer {token}',
+              'Accept': 'application/vnd.github+json',
+          }
+          sha = None
+          try:
+              req = urllib.request.Request(api + '?ref=ci-logs', headers=headers)
+              with urllib.request.urlopen(req) as r:
+                  sha = json.load(r)['sha']
+          except urllib.error.HTTPError as e:
+              if e.code != 404:
+                  print('read failed', e)
+          payload = {
+              'message': f'ci log run {os.environ.get("GITHUB_RUN_NUMBER")}',
+              'content': base64.b64encode(text.encode()).decode(),
+              'branch': 'ci-logs',
+          }
+          if sha:
+              payload['sha'] = sha
+          req = urllib.request.Request(
+              api, data=json.dumps(payload).encode(), headers=headers, method='PUT')
+          try:
+              with urllib.request.urlopen(req) as r:
+                  print('log mirrored:', r.status)
+          except urllib.error.HTTPError as e:
+              print('mirror failed', e.code, e.read()[:300])
+          EOF
+
+      - name: Collect APK
+        run: |
+          mkdir -p out
+          find app/build/outputs/apk -name "*.apk" -print
+          APK=$(find app/build/outputs/apk -name "*.apk" | head -1)
+          if [ -z "$APK" ]; then echo "no apk produced"; exit 1; fi
+          cp "$APK" out/camera-ai.apk
+          ls -la out
+
+      - name: Upload APK (workflow artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: camera-ai-apk
+          path: out/camera-ai.apk
+          retention-days: 90
+
+      - name: Publish to GitHub Releases
+        if: github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Camera AI v1.0.${{ github.run_number }}
+          body: |
+            Camera AI — people-triggered CCTV for Android.
+
+            * Tracks people with MediaPipe BlazePose (on-device, no cloud)
+            * Starts recording automatically when someone joins the frame
+            * Every clip runs at least **10 minutes** (customisable in Settings)
+            * Keeps rolling while people are in view, in the foreground or background
+
+            Download `camera-ai.apk` below and install it (allow "install unknown apps").
+          files: out/camera-ai.apk
+          fail_on_unmatched_files: true
