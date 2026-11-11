@@ -123,11 +123,20 @@ class CameraService : LifecycleService() {
             ACTION_FLIP -> flipCamera()
             ACTION_TORCH -> toggleTorch()
             ACTION_RELOAD -> {
+                val previous = config
                 config = AppPrefs.load(this)
                 policy.updateConfig(config)
                 Session.minRecordSeconds = config.minRecordSeconds
-                destroyDetector()
-                openCamera()
+                // Rebuilding the camera is only needed when the detector changed;
+                // otherwise rebinding would drop a take that is in progress.
+                val detectorChanged = previous.modelVariant != config.modelVariant ||
+                        previous.maxPeople != config.maxPeople ||
+                        previous.minDetectionConfidence != config.minDetectionConfidence
+                if (detectorChanged) {
+                    destroyDetector()
+                    ensureDetectorAsync()
+                }
+                if (!Session.cameraReady) openCamera()
             }
         }
         return START_STICKY
@@ -135,8 +144,13 @@ class CameraService : LifecycleService() {
 
     private fun startInForeground(notification: Notification) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val type = ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA or
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+            // Only claim the microphone type when we could actually record audio:
+            // on Android 14+ declaring a type you do not use is a hard crash.
+            val micGranted = recorder.hasAudioPermission()
+            var type = ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
+            if (config.withAudio && micGranted) {
+                type = type or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+            }
             try {
                 startForeground(NOTIF_ID, notification, type)
             } catch (t: Throwable) {
@@ -220,10 +234,7 @@ class CameraService : LifecycleService() {
             )
             Session.cameraReady = true
             Session.lensFacing = lens
-            val ready = camera
-            if (ready != null && config.autoWatch) {
-                Session.watching = true
-            }
+            if (config.autoWatch) Session.watching = true
             scheduleUpdate()
             ensureDetectorAsync()
         } catch (t: Throwable) {

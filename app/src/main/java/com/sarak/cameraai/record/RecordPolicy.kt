@@ -27,16 +27,8 @@ class RecordPolicy(private var config: Config) {
     private var currentlyRecording: Boolean = false
     private var knownIds: MutableSet<Int> = HashSet()
 
-    /** Everyone the tracker had already introduced before this take. */
-    private var baselineCount: Int = 0
-
     var lastTrigger: String = ""
         private set
-
-    var lastReason: String = ""
-        private set
-
-    var recordActive: Boolean = false
 
     /** True while the empty-frame grace timer is running. */
     fun inGrace(now: Long): Boolean =
@@ -136,7 +128,6 @@ class RecordPolicy(private var config: Config) {
         takeStartMs = now
         segmentStartMs = now
         lastPresentMs = now
-        baselineCount = ids.size
         knownIds = ids.toMutableSet()
     }
 
@@ -148,7 +139,10 @@ class RecordPolicy(private var config: Config) {
         currentlyRecording = false
         takeStartMs = 0
         lastPresentMs = 0
-        knownIds.clear()
+        // knownIds is intentionally kept: the people still standing in frame
+        // already opened the take that just ended, so they must not instantly
+        // open another one. The tracker hands a returning person a fresh id,
+        // which is what "a new person appeared" should mean.
     }
 
     fun resetSeenPeople(ids: List<Int>) {
