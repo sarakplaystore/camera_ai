@@ -9,9 +9,13 @@ package com.sarak.cameraai.ai
  * hits, which suppresses one-frame false positives (posters, reflections).
  */
 class PersonTracker(
-    private val maxMissedFrames: Int = 12,
-    private val matchDistance: Float = 1.15f,
-    private val establishFrames: Int = 3,
+    // A person who turns away or is briefly occluded should keep their id, so
+    // we tolerate a good number of missed analyses before dropping the track.
+    private val maxMissedFrames: Int = 20,
+    // Generous enough to follow somebody walking quickly across frame,
+    // tight enough that two people crossing do not swap ids.
+    private val matchDistance: Float = 1.6f,
+    private val establishFrames: Int = 2,
 ) {
     class Track(val id: Int) {
         val person: Person = Person(0f, FloatArray(KP.COUNT * 4), 0f, 0f, 0f, 0f)
@@ -29,6 +33,34 @@ class PersonTracker(
     fun active(): List<Track> = tracks
 
     fun establishedCount(): Int = tracks.count { it.established }
+
+    /**
+     * MediaPipe sometimes emits two overlapping boxes for one person (one from
+     * the pose detector, one from a partly tracked duplicate). Keeping both
+     * double counts people and can falsely arm the "someone joined" trigger, so
+     * anything mostly inside a stronger detection is discarded.
+     */
+    fun dedupe(detections: List<Person>): List<Person> {
+        if (detections.size < 2) return detections
+        val sorted = detections.sortedByDescending { it.area * it.score }
+        val kept = ArrayList<Person>(sorted.size)
+        for (candidate in sorted) {
+            val duplicate = kept.any { other -> overlap(candidate, other) >= 0.6f }
+            if (!duplicate) kept += candidate
+        }
+        return kept
+    }
+
+    private fun overlap(a: Person, b: Person): Float {
+        val left = maxOf(a.left, b.left)
+        val top = maxOf(a.top, b.top)
+        val right = minOf(a.right, b.right)
+        val bottom = minOf(a.bottom, b.bottom)
+        if (right <= left || bottom <= top) return 0f
+        val intersection = (right - left) * (bottom - top)
+        val smallest = minOf(a.area, b.area).coerceAtLeast(1e-5f)
+        return intersection / smallest
+    }
 
     fun update(detections: List<Person>, nowMs: Long): List<Track> {
         val freeTracks = tracks.toMutableList()

@@ -77,7 +77,7 @@ object AppPrefs {
             maxPeople = p.getInt(K_MAX_PEOPLE, d.maxPeople).coerceIn(1, 5),
             minDetectionConfidence = p.getFloat(K_CONF, d.minDetectionConfidence).coerceIn(0.1f, 0.9f),
             modelVariant = p.getString(K_MODEL, d.modelVariant) ?: d.modelVariant,
-            analysisFps = p.getInt(K_FPS, d.analysisFps).coerceIn(3, 20),
+            analysisFps = p.getInt(K_FPS, d.analysisFps).coerceIn(3, 25),
             drawSkeleton = p.getBoolean(K_SKELETON, d.drawSkeleton),
             drawBoxes = p.getBoolean(K_BOXES, d.drawBoxes),
         )
