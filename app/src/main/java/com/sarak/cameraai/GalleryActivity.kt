@@ -1,18 +1,18 @@
 package com.sarak.cameraai
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.FileProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.sarak.cameraai.record.Clip
+import com.sarak.cameraai.record.ClipStore
 import com.sarak.cameraai.util.Format
-import java.io.File
 
 class GalleryActivity : AppCompatActivity() {
 
@@ -34,7 +34,7 @@ class GalleryActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        val clips = clips()
+        val clips = ClipStore.list(this)
         adapter.submit(clips)
         empty.visibility = if (clips.isEmpty()) View.VISIBLE else View.GONE
         list.visibility = if (clips.isEmpty()) View.GONE else View.VISIBLE
@@ -45,31 +45,22 @@ class GalleryActivity : AppCompatActivity() {
         return true
     }
 
-    private fun clips(): List<File> {
-        val dir = File(getExternalFilesDir(android.os.Environment.DIRECTORY_MOVIES), "CameraAI")
-        if (!dir.exists()) return emptyList()
-        return dir.listFiles { f -> f.isFile && f.extension.equals("mp4", true) }
-            ?.sortedByDescending { it.lastModified() }
-            ?: emptyList()
-    }
-
-    private fun play(file: File) {
-        val uri: Uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+    private fun play(clip: Clip) {
         val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(uri, "video/mp4")
+            setDataAndType(clip.uri, "video/mp4")
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         try {
             startActivity(intent)
         } catch (t: Throwable) {
-            android.widget.Toast.makeText(this, "No video player found", android.widget.Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "No video player found", Toast.LENGTH_SHORT).show()
         }
     }
 
     private inner class ClipAdapter : RecyclerView.Adapter<ClipAdapter.Holder>() {
-        private val items = mutableListOf<File>()
+        private val items = mutableListOf<Clip>()
 
-        fun submit(newItems: List<File>) {
+        fun submit(newItems: List<Clip>) {
             items.clear()
             items.addAll(newItems)
             notifyDataSetChanged()
@@ -82,11 +73,19 @@ class GalleryActivity : AppCompatActivity() {
         }
 
         override fun onBindViewHolder(holder: Holder, position: Int) {
-            val file = items[position]
-            val takeTag = file.name.removePrefix("CCTV_").substringBeforeLast("_")
-            holder.title.text = "Take $takeTag"
-            holder.meta.text = "${Format.humanDate(file.lastModified())} · ${Format.fileSize(file.length())}"
-            holder.itemView.setOnClickListener { play(file) }
+            val clip = items[position]
+            val seconds = (clip.durationMs / 1000).toInt()
+            holder.title.text = "Take ${clip.takeTag}"
+            holder.meta.text = buildString {
+                append(Format.humanDate(clip.dateMs))
+                append(" · ")
+                append(Format.fileSize(clip.sizeBytes))
+                if (seconds > 0) {
+                    append(" · ")
+                    append(Format.clock(clip.durationMs))
+                }
+            }
+            holder.itemView.setOnClickListener { play(clip) }
         }
 
         override fun getItemCount(): Int = items.size

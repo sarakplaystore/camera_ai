@@ -420,7 +420,7 @@ class CameraService : LifecycleService() {
             }
             is VideoRecorder.Event.SegmentSaved -> {
                 Session.recording = recorder.isRecording
-                Session.lastClipPath = event.file.absolutePath
+                Session.lastClipPath = event.displayName
                 Session.lastClipMs = event.durationMs
                 notifyUpdate()
             }
@@ -453,6 +453,25 @@ class CameraService : LifecycleService() {
         torch = !torch
         cam.cameraControl.enableTorch(torch)
         Session.torchOn = torch
+        notifyUpdate()
+    }
+
+    /**
+     * Attaches (or detaches) the on-screen surface. CameraX lets us hand the
+     * same [Preview] use case a surface provider after binding, so the Activity
+     * can come and go without the service being torn down.
+     */
+    fun attachPreview(provider: Preview.SurfaceProvider?) {
+        try {
+            preview?.setSurfaceProvider(provider)
+        } catch (t: Throwable) {
+            Log.w(TAG, "attachPreview failed", t)
+        }
+    }
+
+    fun setAutoWatch(enabled: Boolean) {
+        Session.watching = enabled && Session.cameraReady
+        if (!enabled && recorder.isRecording) stopTake("Watcher paused")
         notifyUpdate()
     }
 
@@ -601,9 +620,16 @@ class CameraService : LifecycleService() {
         super.onDestroy()
     }
 
-    override fun onBind(intent: Intent): IBinder? {
+    /** Local binder so the Activity can hand over a preview surface and controls. */
+    inner class LocalBinder : android.os.Binder() {
+        fun service(): CameraService = this@CameraService
+    }
+
+    private val binder = LocalBinder()
+
+    override fun onBind(intent: Intent): IBinder {
         super.onBind(intent)
-        return null
+        return binder
     }
 
     private fun finishAndStop() {

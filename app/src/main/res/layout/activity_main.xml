@@ -215,6 +215,14 @@
                 android:src="@drawable/ic_flip" />
         </LinearLayout>
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnWatch"
+            style="@style/Widget.CameraAI.Pill"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Pause watcher" />
+
         <TextView
             android:id="@+id/tvHint"
             android:layout_width="match_parent"

@@ -1,11 +1,15 @@
 package com.sarak.cameraai
 
 import android.Manifest
+import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
+import android.os.IBinder
 import android.os.Looper
 import android.view.View
 import android.view.WindowInsets
@@ -13,6 +17,7 @@ import android.view.WindowInsetsController
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.Preview
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import com.sarak.cameraai.capture.CameraService
@@ -28,6 +33,22 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val handler = Handler(Looper.getMainLooper())
     private var config: Config = Config()
+    private var cameraService: CameraService? = null
+
+    private val serviceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
+            val service = (binder as? CameraService.LocalBinder)?.service() ?: return
+            cameraService = service
+            // The service owns the Preview use case; give it our surface.
+            service.attachPreview(binding.previewView.surfaceProvider)
+            SceneBridge.publish(service.scene)
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            cameraService?.attachPreview(null)
+            cameraService = null
+        }
+    }
 
     private val ticker = object : Runnable {
         override fun run() {
@@ -84,6 +105,12 @@ class MainActivity : AppCompatActivity() {
             }
         }
         binding.tvHint.setOnClickListener { openSettings() }
+        binding.btnWatch.setOnClickListener {
+            val enable = !Session.watching
+            Session.watching = enable
+            cameraService?.setAutoWatch(enable)
+            render()
+        }
 
         binding.overlayView.drawBoxes = config.drawBoxes
         binding.overlayView.drawSkeleton = config.drawSkeleton
@@ -96,6 +123,11 @@ class MainActivity : AppCompatActivity() {
         if (hasPermission(Manifest.permission.CAMERA)) {
             hidePermissionPanel()
             CameraService.start(this)
+            bindService(
+                Intent(this, CameraService::class.java),
+                serviceConnection,
+                Context.BIND_AUTO_CREATE,
+            )
         } else {
             showPermissionPanel()
         }
@@ -108,6 +140,13 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
         handler.removeCallbacks(ticker)
         handler.removeCallbacks(overlayTicker)
+        try {
+            cameraService?.attachPreview(null)
+            unbindService(serviceConnection)
+        } catch (_: Throwable) {
+            // Not bound (permission denied) — nothing to release.
+        }
+        cameraService = null
     }
 
     override fun onDestroy() {
@@ -145,6 +184,7 @@ class MainActivity : AppCompatActivity() {
             this,
             if (Session.torchOn) R.drawable.bg_circle_active else R.drawable.bg_circle_idle,
         )
+        binding.btnWatch.text = if (Session.watching) "Pause watcher" else "Resume watcher"
         binding.btnFlip.alpha = if (Session.recording) 0.4f else 1f
         val front = Session.lensFacing == CameraSelector.LENS_FACING_FRONT
         binding.btnTorch.alpha = if (front) 0.4f else 1f

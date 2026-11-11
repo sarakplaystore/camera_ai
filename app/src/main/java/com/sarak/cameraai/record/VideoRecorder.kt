@@ -4,11 +4,14 @@ import android.Manifest
 import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import androidx.camera.video.FileOutputOptions
+import androidx.camera.video.MediaStoreOutputOptions
+import androidx.camera.video.OutputOptions
 import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
@@ -22,17 +25,27 @@ import java.util.concurrent.Executors
  * Owns the camera -> encoder pipe for one continuous "take".
  *
  * [VideoCapture] is bound once (cameras are exclusive devices) and reused for
- * every start/stop. Long takes are spliced into segments of
- * [MAX_SEGMENT_MS] so a multi-hour run never depends on one fragile MP4: when a
- * segment ends the next one starts immediately under the same take tag.
+ * every start/stop. A long take is spliced into segments of [MAX_SEGMENT_MS]
+ * so a multi-hour run never depends on one fragile MP4: when a segment ends the
+ * next one starts immediately under the same take tag.
+ *
+ * On Android 10+ segments are written straight into the shared gallery
+ * (Movies/CameraAI) through MediaStore, so nothing is copied and no space is
+ * wasted. On older devices they land in the app's external files directory.
  */
 class VideoRecorder(
     private val context: Context,
     private val onEvent: (Event) -> Unit,
 ) {
     sealed class Event {
-        data class Started(val file: File) : Event()
-        data class SegmentSaved(val file: File, val durationMs: Long, val bytes: Long) : Event()
+        data class Started(val displayName: String) : Event()
+        data class SegmentSaved(
+            val displayName: String,
+            val durationMs: Long,
+            val bytes: Long,
+            val uri: Uri?,
+        ) : Event()
+
         data class Failed(val reason: String) : Event()
     }
 
@@ -53,8 +66,8 @@ class VideoRecorder(
     private var takeTag: String = ""
     private var segment: Int = 0
     private var wantAudio: Boolean = true
-    /** True when the user pressed stop, so the segment end must not restart. */
     private var stopRequested: Boolean = false
+    private var rotationWanted: Boolean = false
 
     val currentTakeTag: String get() = takeTag
     val elapsedMs: Long get() = if (isRecording) System.currentTimeMillis() - activeStartMs else 0L
@@ -72,7 +85,7 @@ class VideoRecorder(
             if (!it.exists()) it.mkdirs()
         }
 
-    /** Begins a new take: new tag, segment counter reset. */
+    /** Begins a new take: fresh tag, segment counter reset. */
     fun beginTake(): String {
         takeTag = Format.stamp()
         segment = 0
@@ -88,12 +101,17 @@ class VideoRecorder(
         }
         wantAudio = withAudio
         stopRequested = false
+        if (takeTag.isEmpty()) beginTake()
         segment++
-        val file = File(
-            outputDir(),
-            "CCTV_${takeTag.ifEmpty { beginTake() }}_${"%03d".format(segment)}.mp4",
-        )
-        val prepare = capture.output.prepareRecording(context, FileOutputOptions.Builder(file).build())
+        val name = "CCTV_${takeTag}_${"%03d".format(segment)}.mp4"
+        val options = outputOptions(name)
+
+        val prepare = try {
+            capture.output.prepareRecording(context, options)
+        } catch (t: Throwable) {
+            onEvent(Event.Failed("Could not open the encoder: ${t.message}"))
+            return false
+        }
         val configured = if (withAudio && hasAudioPermission()) {
             try {
                 prepare.withAudioEnabled()
@@ -107,7 +125,7 @@ class VideoRecorder(
         starting = true
         active = try {
             configured.start(ContextCompat.getMainExecutor(context)) { event ->
-                handle(event, file)
+                handle(event, name)
             }
         } catch (t: Throwable) {
             starting = false
@@ -117,30 +135,47 @@ class VideoRecorder(
         return active != null
     }
 
-    private fun handle(event: VideoRecordEvent, file: File) {
+    private fun outputOptions(name: String): OutputOptions {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val values = ContentValues().apply {
+                put(MediaStore.Video.Media.DISPLAY_NAME, name)
+                put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
+                put(MediaStore.Video.Media.RELATIVE_PATH, ClipStore.RELATIVE_PATH)
+            }
+            return MediaStoreOutputOptions.Builder(
+                context.contentResolver,
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+            ).setContentValues(values).build()
+        }
+        return FileOutputOptions.Builder(File(outputDir(), name)).build()
+    }
+
+    private fun handle(event: VideoRecordEvent, name: String) {
         when (event) {
             is VideoRecordEvent.Start -> {
                 starting = false
                 activeStartMs = System.currentTimeMillis()
                 recordingStartedMs = activeStartMs
                 isRecording = true
-                onEvent(Event.Started(file))
+                onEvent(Event.Started(name))
             }
 
             is VideoRecordEvent.Finalize -> {
-                val duration = System.currentTimeMillis() - activeStartMs
                 isRecording = false
                 active = null
                 starting = false
+                val duration = System.currentTimeMillis() - activeStartMs
                 val error = event.error
-                val ok = error == VideoRecordEvent.Finalize.ERROR_NONE ||
-                        error == VideoRecordEvent.Finalize.ERROR_DURATION_LIMIT_REACHED ||
-                        error == VideoRecordEvent.Finalize.ERROR_INSUFFICIENT_STORAGE
-                if (!ok) Log.w(TAG, "finalize error $error for ${file.name}")
-                val bytes = if (file.exists()) file.length() else 0L
-                if (bytes > 0) {
-                    copyToGallery(file)
-                    onEvent(Event.SegmentSaved(file, duration, bytes))
+                val hardFailure = error != VideoRecordEvent.Finalize.ERROR_NONE &&
+                        error != VideoRecordEvent.Finalize.ERROR_DURATION_LIMIT_REACHED &&
+                        error != VideoRecordEvent.Finalize.ERROR_INSUFFICIENT_STORAGE
+                if (hardFailure) Log.w(TAG, "finalize error $error for $name")
+
+                val uri = event.outputResults.outputUri
+                val reportedMs = runCatching { event.outputResults.durationMs }.getOrDefault(duration)
+                val bytes = ClipStore.sizeOf(context, uri, name)
+                if (bytes > 0 || (uri != null && uri != Uri.EMPTY)) {
+                    onEvent(Event.SegmentSaved(name, reportedMs, bytes, uri))
                 } else {
                     onEvent(Event.Failed("Nothing was written (code $error)"))
                 }
@@ -155,9 +190,7 @@ class VideoRecorder(
         }
     }
 
-    private var rotationWanted = false
-
-    /** Ask for the current segment to close and a fresh one to open. */
+    /** Close the current segment and immediately open a fresh one. */
     fun rotate() {
         val rec = active
         if (rec == null || !isRecording) return
@@ -195,46 +228,10 @@ class VideoRecorder(
         ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
                 PackageManager.PERMISSION_GRANTED
 
-    /**
-     * Mirrors the finished segment into the shared gallery (Movies/CameraAI)
-     * on API 29+, and into the public Movies folder on older devices.
-     */
-    private fun copyToGallery(file: File) {
-        ioExecutor.execute {
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    val values = ContentValues().apply {
-                        put(MediaStore.Video.Media.DISPLAY_NAME, file.name)
-                        put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
-                        put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/CameraAI")
-                        put(MediaStore.Video.Media.IS_PENDING, 1)
-                    }
-                    val uri = context.contentResolver.insert(
-                        MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values,
-                    ) ?: return@execute
-                    context.contentResolver.openOutputStream(uri)?.use { out ->
-                        file.inputStream().use { input -> input.copyTo(out, 256 * 1024) }
-                    }
-                    values.clear()
-                    values.put(MediaStore.Video.Media.IS_PENDING, 0)
-                    context.contentResolver.update(uri, values, null, null)
-                } else {
-                    val dir = File(
-                        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES),
-                        "CameraAI",
-                    )
-                    if (!dir.exists()) dir.mkdirs()
-                    val dest = File(dir, file.name)
-                    file.copyTo(dest, overwrite = true)
-                }
-            } catch (t: Throwable) {
-                Log.w(TAG, "gallery copy failed for ${file.name}", t)
-            }
-        }
-    }
-
     companion object {
         private const val TAG = "VideoRecorder"
+
+        /** Four minutes keeps any single MP4 small enough to be safe to finalise. */
         const val MAX_SEGMENT_MS = 4 * 60 * 1000L
     }
 }
